@@ -5,11 +5,10 @@ use axum_openapi::DescribeSchema;
 
 #[tokio::main]
 async fn main() {
-    let schema = FindPetsQueryParams::describe_schema();
-    println!("{:#?}", schema);
-
     let app = route("/pets", get(find_pets).post(add_pet))
-        .route("/pets/:id", get(find_pet_by_id).delete(delete_pet));
+        .route("/pets/:id", get(find_pet_by_id).delete(delete_pet))
+        .route("/openapi.yaml", get(axum_openapi::api_yaml))
+        .route("/openapi.json", get(axum_openapi::api_json));
 
     let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
     hyper::server::Server::bind(&addr)

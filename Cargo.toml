@@ -5,6 +5,14 @@ edition = "2018"
 
 [dependencies]
 openapiv3 = "0.5"
+inventory = "0.1"
+
+axum = "0.1"
+serde = "1.0"
+hyper = "0.14"
+serde_yaml = "0.8"
+once_cell = "1.0"
+
 axum_openapi_derive = { path = "./axum_openapi_derive" }
 
 [dev-dependencies]

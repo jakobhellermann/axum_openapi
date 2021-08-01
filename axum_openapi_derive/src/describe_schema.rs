@@ -4,20 +4,20 @@ use syn::{DataStruct, DeriveInput};
 
 struct Config<'a> {
     ident: &'a syn::Ident,
-    openapiv3: TokenStream,
     axum_openapi: TokenStream,
+    macro_exports: TokenStream,
 }
 
 pub fn derive_schema(item: TokenStream) -> syn::Result<TokenStream> {
     let input: DeriveInput = syn::parse2(item)?;
 
     let axum_openapi = quote!(axum_openapi);
-    let openapiv3 = quote!(#axum_openapi::__macro::openapiv3);
+    let macro_exports = quote!(#axum_openapi::__macro);
 
     let config = Config {
         ident: &input.ident,
-        openapiv3,
         axum_openapi,
+        macro_exports,
     };
 
     match input.data {
@@ -31,10 +31,11 @@ impl Config<'_> {
     pub fn derive_schema_struct(&self, data: DataStruct) -> syn::Result<TokenStream> {
         let Config {
             ident,
-            openapiv3,
+            macro_exports,
             axum_openapi,
             ..
         } = self;
+        let openapiv3 = quote!(#macro_exports::openapiv3);
 
         let properties = data.fields.iter().map(|field| {
             let ty = &field.ty;
@@ -66,6 +67,11 @@ impl Config<'_> {
                     }
                 }
             }
+
+            #macro_exports::inventory::submit!(#![crate = #macro_exports] #macro_exports::SchemaDescription {
+                schema: <#ident as #axum_openapi::DescribeSchema>::describe_schema(),
+                name: stringify!(#ident).to_string(),
+            });
         })
     }
 }
