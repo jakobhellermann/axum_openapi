@@ -2,6 +2,7 @@ mod utils;
 use openapiv3::*;
 
 mod describe_impl;
+mod operation_impl;
 
 pub use axum_openapi_derive::handler;
 pub use axum_openapi_derive::routes;
@@ -12,7 +13,7 @@ pub trait DescribeSchema {
 }
 
 pub trait OperationParameter {
-    fn modify_op(operation: &mut OpenAPI);
+    fn modify_op(operation: &mut Operation, required: bool);
 }
 
 #[doc(hidden)]
@@ -30,8 +31,13 @@ pub mod __macro {
         pub path_item: openapiv3::PathItem,
     }
 
+    pub struct OperationDescription {
+        pub operation: openapiv3::Operation,
+    }
+
     inventory::collect!(SchemaDescription);
     inventory::collect!(PathDescription);
+    inventory::collect!(OperationDescription);
 }
 
 pub async fn api_yaml() -> hyper::Response<hyper::Body> {
@@ -44,10 +50,23 @@ pub async fn api_json() -> axum::response::Json<openapiv3::OpenAPI> {
 pub const OPENAPI: once_cell::sync::Lazy<openapiv3::OpenAPI> = once_cell::sync::Lazy::new(openapi);
 
 fn openapi() -> openapiv3::OpenAPI {
+    let handler_ops: std::collections::HashMap<&str, &Operation> =
+        inventory::iter::<__macro::OperationDescription>()
+            .filter_map(|op| {
+                let op_id = op.operation.operation_id.as_deref()?;
+                Some((op_id, &op.operation))
+            })
+            .collect();
+
     openapiv3::OpenAPI {
         openapi: "3.0.3".to_string(),
         paths: inventory::iter::<__macro::PathDescription>()
-            .map(|path| (path.path.clone(), ReferenceOr::Item(path.path_item.clone())))
+            .map(|path| {
+                let mut item = path.path_item.clone();
+                patch_operations(&mut item, &handler_ops);
+
+                (path.path.clone(), ReferenceOr::Item(item))
+            })
             .collect(),
         components: Some(openapiv3::Components {
             schemas: inventory::iter::<__macro::SchemaDescription>()
@@ -59,5 +78,28 @@ fn openapi() -> openapiv3::OpenAPI {
             ..Default::default()
         }),
         ..Default::default()
+    }
+}
+
+fn patch_operations(
+    path_item: &mut PathItem,
+    handler_ops: &std::collections::HashMap<&str, &Operation>,
+) {
+    let ops = std::array::IntoIter::new([
+        path_item.get.as_mut(),
+        path_item.put.as_mut(),
+        path_item.post.as_mut(),
+        path_item.delete.as_mut(),
+        path_item.options.as_mut(),
+        path_item.head.as_mut(),
+        path_item.patch.as_mut(),
+        path_item.trace.as_mut(),
+    ]);
+    for (handler_op, op) in ops
+        .into_iter()
+        .flatten()
+        .filter_map(|op| Some((*handler_ops.get(op.operation_id.as_deref()?)?, op)))
+    {
+        *op = handler_op.clone();
     }
 }

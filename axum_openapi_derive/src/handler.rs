@@ -7,16 +7,28 @@ pub fn handler(item: TokenStream, _attr: TokenStream) -> syn::Result<TokenStream
     let axum_openapi = quote!(axum_openapi);
     let macro_exports = quote!(#axum_openapi::__macro);
 
+    let types = fn_item.sig.inputs.iter().filter_map(|arg| match arg {
+        syn::FnArg::Receiver(_) => None,
+        syn::FnArg::Typed(pat_ty) => Some(&pat_ty.ty),
+    });
+
     let fn_name = &fn_item.sig.ident;
 
-    let _operation = quote! {
-        #macro_exports::openapiv3::Operation {
-            operation_id: Some(stringify!(#fn_name).to_string()),
-            ..Default::default()
-        }
+    let submit = quote! {
+        #macro_exports::inventory::submit!(#![crate=#macro_exports] {
+            let mut operation = #macro_exports::openapiv3::Operation {
+                operation_id: Some(stringify!(#fn_name).to_string()),
+                ..Default::default()
+            };
+            #(<#types as #axum_openapi::OperationParameter>::modify_op(&mut operation, true);)*
+            #macro_exports::OperationDescription {
+                operation
+            }
+        });
     };
 
     Ok(quote! {
+        #submit
         #fn_item
     })
 }

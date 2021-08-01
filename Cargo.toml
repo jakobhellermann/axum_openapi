@@ -3,6 +3,10 @@ name = "axum_openapi"
 version = "0.1.0"
 edition = "2018"
 
+[features]
+default = ["skip_serializing_defaults"]
+skip_serializing_defaults = ["openapiv3/skip_serializing_defaults"]
+
 [dependencies]
 openapiv3 = "0.5"
 inventory = "0.1"
