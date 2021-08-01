@@ -10,6 +10,18 @@ pub use axum_openapi_derive::DescribeSchema;
 
 pub trait DescribeSchema {
     fn describe_schema() -> Schema;
+    fn ref_name() -> Option<String> {
+        None
+    }
+
+    fn reference_or_schema() -> ReferenceOr<Schema> {
+        match Self::ref_name() {
+            Some(ref_name) => ReferenceOr::Reference {
+                reference: format!("#/components/schemas/{}", ref_name),
+            },
+            None => ReferenceOr::Item(Self::describe_schema()),
+        }
+    }
 }
 
 pub trait OperationParameter {

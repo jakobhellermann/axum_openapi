@@ -47,6 +47,8 @@ impl Config<'_> {
             }
         });
 
+        let ref_name = ident.to_string();
+
         Ok(quote! {
             impl #axum_openapi::DescribeSchema for #ident {
                 fn describe_schema() -> #openapiv3::Schema {
@@ -66,11 +68,15 @@ impl Config<'_> {
                         schema_kind: #openapiv3::SchemaKind::Type(#openapiv3::Type::Object(obj)),
                     }
                 }
+
+                fn ref_name() -> Option<String> {
+                    Some(#ref_name.to_string())
+                }
             }
 
             #macro_exports::inventory::submit!(#![crate = #macro_exports] #macro_exports::SchemaDescription {
                 schema: <#ident as #axum_openapi::DescribeSchema>::describe_schema(),
-                name: stringify!(#ident).to_string(),
+                name: #ref_name.to_string(),
             });
         })
     }

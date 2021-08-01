@@ -19,7 +19,7 @@ impl<T: DescribeSchema> OperationParameter for axum::extract::Json<T> {
             content: std::array::IntoIter::new([(
                 "application/json".to_string(),
                 MediaType {
-                    schema: Some(ReferenceOr::Item(T::describe_schema())),
+                    schema: Some(T::reference_or_schema()),
                     example: None,
                     examples: Default::default(),
                     encoding: Default::default(),
