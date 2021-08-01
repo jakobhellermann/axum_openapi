@@ -27,6 +27,9 @@ pub trait DescribeSchema {
 pub trait OperationParameter {
     fn modify_op(operation: &mut Operation, required: bool);
 }
+pub trait OperationResult {
+    fn modify_op(operation: &mut Operation);
+}
 
 #[doc(hidden)]
 pub mod __macro {

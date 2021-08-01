@@ -14,6 +14,11 @@ pub fn handler(item: TokenStream, _attr: TokenStream) -> syn::Result<TokenStream
 
     let fn_name = &fn_item.sig.ident;
 
+    let return_ty = match &fn_item.sig.output {
+        syn::ReturnType::Default => quote! { () },
+        syn::ReturnType::Type(_, ty) => quote! { #ty },
+    };
+
     let submit = quote! {
         #macro_exports::inventory::submit!(#![crate=#macro_exports] {
             let mut operation = #macro_exports::openapiv3::Operation {
@@ -21,6 +26,8 @@ pub fn handler(item: TokenStream, _attr: TokenStream) -> syn::Result<TokenStream
                 ..Default::default()
             };
             #(<#types as #axum_openapi::OperationParameter>::modify_op(&mut operation, true);)*
+            <#return_ty as #axum_openapi::OperationResult>::modify_op(&mut operation);
+
             #macro_exports::OperationDescription {
                 operation
             }

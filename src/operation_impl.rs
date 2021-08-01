@@ -1,6 +1,6 @@
 use openapiv3::*;
 
-use crate::{DescribeSchema, OperationParameter};
+use crate::{DescribeSchema, OperationParameter, OperationResult};
 
 impl<T: OperationParameter> OperationParameter for Option<T> {
     fn modify_op(op: &mut Operation, _: bool) {
@@ -65,5 +65,17 @@ impl<T: DescribeSchema> OperationParameter for axum::extract::Query<T> {
                 allow_empty_value: None,
             }))
         }
+    }
+}
+
+impl OperationResult for () {
+    fn modify_op(operation: &mut Operation) {
+        operation.responses.default = Some(ReferenceOr::Item(Response {
+            description: "Default OK response".to_string(),
+            headers: Default::default(),
+            content: Default::default(),
+            links: Default::default(),
+            extensions: Default::default(),
+        }));
     }
 }
