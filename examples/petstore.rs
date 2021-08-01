@@ -1,3 +1,4 @@
+#![allow(deprecated)]
 use axum::prelude::*;
 use std::net::SocketAddr;
 

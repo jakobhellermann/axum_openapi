@@ -24,8 +24,6 @@ pub fn routes(tokens: TokenStream) -> TokenStream {
         .into()
 }
 
-/*
-use proc_macro::TokenStream;
 use quote::{format_ident, quote};
 use syn::{
     parse::{Parse, ParseStream},
@@ -97,4 +95,3 @@ pub fn all_tuples(input: TokenStream) -> TokenStream {
         )*
     })
 }
-*/

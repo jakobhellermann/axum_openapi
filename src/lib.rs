@@ -78,7 +78,7 @@ fn openapi() -> openapiv3::OpenAPI {
         paths: inventory::iter::<__macro::PathDescription>()
             .map(|path| {
                 let mut item = path.path_item.clone();
-                patch_operations(&mut item, &handler_ops);
+                patch_operations(&mut item, &handler_ops, &path.path);
 
                 (path.path.clone(), ReferenceOr::Item(item))
             })
@@ -99,7 +99,19 @@ fn openapi() -> openapiv3::OpenAPI {
 fn patch_operations(
     path_item: &mut PathItem,
     handler_ops: &std::collections::HashMap<&str, &Operation>,
+    path: &str,
 ) {
+    let path_params: Vec<_> = path
+        .split('/')
+        .filter_map(|component| {
+            if component.starts_with('{') && component.ends_with('}') {
+                Some(&component[1..component.len() - 1])
+            } else {
+                None
+            }
+        })
+        .collect();
+
     let ops = std::array::IntoIter::new([
         path_item.get.as_mut(),
         path_item.put.as_mut(),
@@ -116,5 +128,19 @@ fn patch_operations(
         .filter_map(|op| Some((*handler_ops.get(op.operation_id.as_deref()?)?, op)))
     {
         *op = handler_op.clone();
+
+        op.parameters
+            .iter_mut()
+            .filter_map(|param| match param {
+                ReferenceOr::Item(Parameter::Path { parameter_data, .. }) => Some(parameter_data),
+                _ => None,
+            })
+            .for_each(|param| {
+                if let Some(i) = param.name.strip_prefix("__parameter") {
+                    if let Ok(i) = i.parse::<usize>() {
+                        param.name = path_params[i].to_string();
+                    }
+                }
+            });
     }
 }

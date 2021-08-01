@@ -1,3 +1,4 @@
+use axum_openapi_derive::all_tuples;
 use openapiv3::*;
 
 use crate::{DescribeSchema, OperationParameter, OperationResult};
@@ -31,9 +32,41 @@ impl<T: DescribeSchema> OperationParameter for axum::extract::Json<T> {
         }));
     }
 }
-impl<T> OperationParameter for axum::extract::UrlParams<T> {
-    fn modify_op(_: &mut Operation, _: bool) {}
+
+macro_rules! impl_url_params {
+    ( $($param:ident),* ) => {
+
+        #[allow(deprecated)]
+        impl<$($param: DescribeSchema,)*> OperationParameter for axum::extract::UrlParams<($($param,)*)> {
+            fn modify_op(op: &mut Operation, _: bool) {
+                let parameters = vec![$(<$param as DescribeSchema>::reference_or_schema(),)*];
+                url_params(op, parameters)
+            }
+        }
+    };
 }
+
+fn url_params(op: &mut Operation, parameters: Vec<ReferenceOr<Schema>>) {
+    for (i, schema) in parameters.into_iter().enumerate() {
+        op.parameters.push(ReferenceOr::Item(Parameter::Path {
+            parameter_data: ParameterData {
+                name: format!("__parameter{}", i),
+                description: None,
+                required: true,
+                deprecated: None,
+                format: ParameterSchemaOrContent::Schema(schema),
+                example: None,
+                examples: Default::default(),
+                explode: None,
+                extensions: Default::default(),
+            },
+            style: PathStyle::Simple,
+        }))
+    }
+}
+
+all_tuples!(impl_url_params, 1, 6, T);
+
 impl<T: DescribeSchema> OperationParameter for axum::extract::Query<T> {
     fn modify_op(op: &mut Operation, required: bool) {
         let schema = T::describe_schema();
