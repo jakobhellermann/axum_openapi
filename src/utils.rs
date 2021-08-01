@@ -26,7 +26,7 @@ pub fn yaml_response<T: Serialize>(body: &T) -> hyper::Response<hyper::Body> {
     let mut res = hyper::Response::new(hyper::Body::from(bytes));
     res.headers_mut().insert(
         hyper::header::CONTENT_TYPE,
-        hyper::header::HeaderValue::from_static("application/x-yaml"),
+        hyper::header::HeaderValue::from_static("text/x-yaml"),
     );
     res
 }

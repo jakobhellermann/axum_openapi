@@ -26,6 +26,7 @@ pub mod __macro {
     }
 
     pub struct PathDescription {
+        pub path: String,
         pub path_item: openapiv3::PathItem,
     }
 
@@ -45,6 +46,9 @@ pub const OPENAPI: once_cell::sync::Lazy<openapiv3::OpenAPI> = once_cell::sync::
 fn openapi() -> openapiv3::OpenAPI {
     openapiv3::OpenAPI {
         openapi: "3.0.3".to_string(),
+        paths: inventory::iter::<__macro::PathDescription>()
+            .map(|path| (path.path.clone(), ReferenceOr::Item(path.path_item.clone())))
+            .collect(),
         components: Some(openapiv3::Components {
             schemas: inventory::iter::<__macro::SchemaDescription>()
                 .map(|desc| {
