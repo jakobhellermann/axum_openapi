@@ -3,15 +3,14 @@ use openapiv3::*;
 
 mod describe_impl;
 
+pub use axum_openapi_derive::handler;
+pub use axum_openapi_derive::routes;
 pub use axum_openapi_derive::DescribeSchema;
 
 pub trait DescribeSchema {
     fn describe_schema() -> Schema;
 }
 
-pub trait DescribeOperation<Out, Params> {
-    fn describe_operation() -> Operation;
-}
 pub trait OperationParameter {
     fn modify_op(operation: &mut OpenAPI);
 }
@@ -25,7 +24,13 @@ pub mod __macro {
         pub schema: openapiv3::Schema,
         pub name: String,
     }
+
+    pub struct PathDescription {
+        pub path_item: openapiv3::PathItem,
+    }
+
     inventory::collect!(SchemaDescription);
+    inventory::collect!(PathDescription);
 }
 
 pub async fn api_yaml() -> hyper::Response<hyper::Body> {

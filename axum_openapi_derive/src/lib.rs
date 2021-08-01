@@ -1,9 +1,25 @@
 use proc_macro::TokenStream;
 mod describe_schema;
+mod handler;
+mod routes;
 
 #[proc_macro_derive(DescribeSchema)]
 pub fn derive_answer_fn(item: TokenStream) -> TokenStream {
     describe_schema::derive_schema(item.into())
+        .unwrap_or_else(|e| e.into_compile_error())
+        .into()
+}
+
+#[proc_macro_attribute]
+pub fn handler(attr: TokenStream, item: TokenStream) -> TokenStream {
+    handler::handler(item.into(), attr.into())
+        .unwrap_or_else(|e| e.into_compile_error())
+        .into()
+}
+
+#[proc_macro]
+pub fn routes(tokens: TokenStream) -> TokenStream {
+    routes::routes(tokens.into())
         .unwrap_or_else(|e| e.into_compile_error())
         .into()
 }
