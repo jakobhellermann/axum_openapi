@@ -1,18 +1,26 @@
 use axum_openapi_derive::all_tuples;
 use openapiv3::*;
 
-use crate::{DescribeSchema, OperationParameter, OperationResult};
+use crate::openapi_traits::{DescribeSchema, OperationParameter, OperationResult};
 
 impl<T: OperationParameter> OperationParameter for Option<T> {
-    fn modify_op(op: &mut Operation, _: bool) {
-        T::modify_op(op, false);
+    fn modify_op(openapi: &mut OpenAPI, op: &mut Operation, _: bool) {
+        T::modify_op(openapi, op, false);
     }
 }
 
 impl<T: DescribeSchema> OperationParameter for axum::extract::Json<T> {
-    fn modify_op(op: &mut Operation, required: bool) {
+    fn modify_op(openapi: &mut OpenAPI, op: &mut Operation, required: bool) {
         if op.request_body.is_some() {
             todo!();
+        }
+
+        if let Some(ref_name) = T::ref_name() {
+            openapi
+                .components
+                .get_or_insert_with(Default::default)
+                .schemas
+                .insert(ref_name, ReferenceOr::Item(T::describe_schema()));
         }
 
         op.request_body = Some(ReferenceOr::Item(RequestBody {
@@ -38,7 +46,7 @@ macro_rules! impl_url_params {
 
         #[allow(deprecated)]
         impl<$($param: DescribeSchema,)*> OperationParameter for axum::extract::UrlParams<($($param,)*)> {
-            fn modify_op(op: &mut Operation, _: bool) {
+            fn modify_op(_: &mut OpenAPI,op: &mut Operation, _: bool) {
                 let parameters = vec![$(<$param as DescribeSchema>::reference_or_schema(),)*];
                 url_params(op, parameters)
             }
@@ -68,7 +76,7 @@ fn url_params(op: &mut Operation, parameters: Vec<ReferenceOr<Schema>>) {
 all_tuples!(impl_url_params, 1, 6, T);
 
 impl<T: DescribeSchema> OperationParameter for axum::extract::Query<T> {
-    fn modify_op(op: &mut Operation, required: bool) {
+    fn modify_op(_: &mut OpenAPI, op: &mut Operation, required: bool) {
         let schema = T::describe_schema();
         let obj = match schema.schema_kind {
             SchemaKind::Type(Type::Object(obj)) => obj,
@@ -102,7 +110,7 @@ impl<T: DescribeSchema> OperationParameter for axum::extract::Query<T> {
 }
 
 impl OperationResult for () {
-    fn modify_op(operation: &mut Operation) {
+    fn modify_op(_: &mut OpenAPI, operation: &mut Operation) {
         operation.responses.default = Some(ReferenceOr::Item(Response {
             description: "Default OK response".to_string(),
             headers: Default::default(),
@@ -111,4 +119,8 @@ impl OperationResult for () {
             extensions: Default::default(),
         }));
     }
+}
+
+impl<Body> OperationResult for hyper::Response<Body> {
+    fn modify_op(_: &mut OpenAPI, _: &mut Operation) {}
 }

@@ -1,6 +1,9 @@
 use proc_macro::TokenStream;
 mod describe_schema;
+
+#[cfg(feature = "macro-based")]
 mod handler;
+#[cfg(feature = "macro-based")]
 mod routes;
 
 #[proc_macro_derive(DescribeSchema)]
@@ -11,6 +14,7 @@ pub fn derive_answer_fn(item: TokenStream) -> TokenStream {
 }
 
 #[proc_macro_attribute]
+#[cfg(feature = "macro-based")]
 pub fn handler(attr: TokenStream, item: TokenStream) -> TokenStream {
     handler::handler(item.into(), attr.into())
         .unwrap_or_else(|e| e.into_compile_error())
@@ -18,6 +22,7 @@ pub fn handler(attr: TokenStream, item: TokenStream) -> TokenStream {
 }
 
 #[proc_macro]
+#[cfg(feature = "macro-based")]
 pub fn routes(tokens: TokenStream) -> TokenStream {
     routes::routes(tokens.into())
         .unwrap_or_else(|e| e.into_compile_error())

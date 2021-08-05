@@ -1,6 +1,7 @@
 use openapiv3::*;
 
-use crate::{utils, DescribeSchema};
+use crate::openapi_traits::DescribeSchema;
+use crate::utils;
 
 impl DescribeSchema for i32 {
     fn describe_schema() -> Schema {

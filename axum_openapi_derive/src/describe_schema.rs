@@ -74,6 +74,7 @@ impl Config<'_> {
                 }
             }
 
+            #[cfg(feature = "macro-based")]
             #macro_exports::inventory::submit!(#![crate = #macro_exports] #macro_exports::SchemaDescription {
                 schema: <#ident as #axum_openapi::DescribeSchema>::describe_schema(),
                 name: #ref_name.to_string(),
