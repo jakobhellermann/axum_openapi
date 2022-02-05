@@ -3,6 +3,7 @@ name = "axum_openapi"
 version = "0.1.0"
 edition = "2018"
 license = "MIT"
+resolver = "2"
 
 [features]
 default = ["skip_serializing_defaults"]
@@ -30,4 +31,4 @@ tokio = { version = "1.9", features = ["full"] }
 hyper = { version = "0.14", features = ["server", "tcp", "http1", "http2"] }
 
 [workspace]
-members = [".", "axum_openapi_derive"]
+members = [".", "openapi_derive", "axum_openapi_derive"]
